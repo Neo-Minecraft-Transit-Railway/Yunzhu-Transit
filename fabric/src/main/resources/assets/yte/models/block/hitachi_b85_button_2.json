@@ -1,0 +1,91 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "block/block",
+  "texture_size": [
+    16,
+    80
+  ],
+  "textures": {
+    "5": "yte:block/hitachi_b85_panel_1_vandar",
+    "particle": "yte:block/hitachi_b85_panel_1_vandar"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        0,
+        0
+      ],
+      "to": [
+        10,
+        7,
+        0.1
+      ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          7,
+          0,
+          -0.25
+        ]
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            2.5752,
+            0,
+            9.19589,
+            2.6
+          ],
+          "texture": "#5"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            2.6
+          ],
+          "texture": "#5"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#5"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            2.6
+          ],
+          "texture": "#5"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.05
+          ],
+          "texture": "#5"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.05
+          ],
+          "texture": "#5"
+        }
+      }
+    }
+  ]
+}

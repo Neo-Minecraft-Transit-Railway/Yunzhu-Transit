@@ -1,0 +1,257 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "block/block",
+  "textures": {
+    "1": "yte:block/mitsubishi_doas_lcd_1",
+    "2": "yte:block/base5",
+    "particle": "yte:block/mitsubishi_doas_lcd_1"
+  },
+  "elements": [
+    {
+      "from": [
+        5.75,
+        0,
+        0
+      ],
+      "to": [
+        10.25,
+        9,
+        0.1
+      ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          7,
+          -0.5,
+          -0.25
+        ]
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            1,
+            16
+          ],
+          "texture": "#1"
+        },
+        "east": {
+          "uv": [
+            15,
+            0,
+            16,
+            16
+          ],
+          "texture": "#1"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#1"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            1,
+            16
+          ],
+          "texture": "#1"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            1
+          ],
+          "texture": "#1"
+        },
+        "down": {
+          "uv": [
+            0,
+            15,
+            16,
+            16
+          ],
+          "texture": "#1"
+        }
+      }
+    },
+    {
+      "from": [
+        5.75,
+        0,
+        0
+      ],
+      "to": [
+        10.25,
+        9,
+        0.1
+      ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          7,
+          -0.5,
+          -0.25
+        ]
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            13
+          ],
+          "texture": "#particle"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            13
+          ],
+          "texture": "#particle"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#1"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            13
+          ],
+          "texture": "#particle"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.25
+          ],
+          "texture": "#particle"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.25
+          ],
+          "texture": "#particle"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        4.5,
+        9,
+        0.1
+      ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          1.25,
+          -0.5,
+          -0.25
+        ]
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            13
+          ],
+          "texture": "#particle"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            13
+          ],
+          "texture": "#particle"
+        },
+        "south": {
+          "uv": [
+            4.11311,
+            0,
+            11.88689,
+            16
+          ],
+          "texture": "#2"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            13
+          ],
+          "texture": "#particle"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.25
+          ],
+          "texture": "#particle"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.25
+          ],
+          "texture": "#particle"
+        }
+      }
+    }
+  ],
+  "groups": [
+    0,
+    1,
+    2,
+    {
+      "name": "group",
+      "origin": [
+        0.375,
+        3.325,
+        0
+      ],
+      "color": 0,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/schindler_z_line_3_keypad_1"
+    },
+    "facing=east": {
+      "model": "yte:block/schindler_z_line_3_keypad_1",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/schindler_z_line_3_keypad_1",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/schindler_z_line_3_keypad_1",
+      "y": 270
+    }
+  }
+}

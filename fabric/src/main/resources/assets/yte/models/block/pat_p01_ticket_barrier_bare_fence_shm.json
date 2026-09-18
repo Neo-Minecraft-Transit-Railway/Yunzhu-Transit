@@ -1,0 +1,6 @@
+{
+  "parent": "yte:block/pat_p01_ticket_barrier_bare_fence_base",
+  "textures": {
+    "particle": "mtr:block/flowers/shm_1"
+  }
+}

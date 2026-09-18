@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/mitsubishi_button_shun_hing_square"
+    },
+    "facing=east": {
+      "model": "yte:block/mitsubishi_button_shun_hing_square",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/mitsubishi_button_shun_hing_square",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/mitsubishi_button_shun_hing_square",
+      "y": 270
+    }
+  }
+}

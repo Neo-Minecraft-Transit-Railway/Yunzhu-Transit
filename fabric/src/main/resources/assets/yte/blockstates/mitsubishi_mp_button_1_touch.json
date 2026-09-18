@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/mitsubishi_mp_button_1_touch"
+    },
+    "facing=east": {
+      "model": "yte:block/mitsubishi_mp_button_1_touch",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/mitsubishi_mp_button_1_touch",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/mitsubishi_mp_button_1_touch",
+      "y": 270
+    }
+  }
+}

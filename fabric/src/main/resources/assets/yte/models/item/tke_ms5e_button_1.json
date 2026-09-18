@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/tke_ms5e_button_1"
+  }
+}

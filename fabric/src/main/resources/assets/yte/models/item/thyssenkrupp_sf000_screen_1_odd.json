@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/thyssenkrupp_sf000_screen_1_odd"
+  }
+}

@@ -1,0 +1,13 @@
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation "com.google.code.gson:gson:+"
+	implementation "commons-io:commons-io:2.20.+"
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}

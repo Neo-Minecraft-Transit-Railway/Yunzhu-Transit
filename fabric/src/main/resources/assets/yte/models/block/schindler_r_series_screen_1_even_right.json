@@ -1,0 +1,41 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"textures": {
+		"0": "yte:block/panel",
+		"1": "yte:block/schindler_m_series_panel",
+		"2": "yte:block/black",
+		"particle": "yte:block/panel"
+	},
+	"elements": [
+		{
+			"from": [0, 9, 0],
+			"to": [4.125, 12, 0.1],
+			"rotation": {"angle": 0, "axis": "y", "origin": [-7, 8.5, -0.25]},
+			"faces": {
+				"north": {"uv": [4, 0, 8, 13], "texture": "#0"},
+				"east": {"uv": [0, 0, 0.25, 13], "texture": "#0"},
+				"south": {"uv": [4, 0, 12, 16], "texture": "#1"},
+				"up": {"uv": [4, 0, 8, 0.25], "texture": "#0"},
+				"down": {"uv": [4, 0, 8, 0.25], "texture": "#0"}
+			}
+		},
+		{
+			"from": [0, 9.5, 0.11],
+			"to": [1.5, 11.5, 0.11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [-1, 9.5, 0.15]},
+			"faces": {
+				"south": {"uv": [0, 0, 1.5, 2], "texture": "#2"}
+			}
+		},
+		{
+			"from": [2.25, 9.5, 0.11],
+			"to": [3.5, 11.5, 0.11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [1, 9.5, 0.15]},
+			"faces": {
+				"south": {"uv": [0, 0, 1.25, 2], "texture": "#2"}
+			}
+		}
+	]
+}

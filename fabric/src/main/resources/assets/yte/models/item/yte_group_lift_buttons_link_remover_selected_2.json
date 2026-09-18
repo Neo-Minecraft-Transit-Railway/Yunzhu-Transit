@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/group_lift_buttons_link",
+    "layer1": "yte:item/link_remover_selected_2"
+  }
+}

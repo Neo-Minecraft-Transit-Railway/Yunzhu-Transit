@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/kone_kds330_lantern_surface_1"
+    },
+    "facing=east": {
+      "model": "yte:block/kone_kds330_lantern_surface_1",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/kone_kds330_lantern_surface_1",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/kone_kds330_lantern_surface_1",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"texture_size": [225, 950],
+	"textures": {
+		"0": "yte:block/thyssenkrupp_s001_button_1",
+		"particle": "yte:block/thyssenkrupp_s001_button_1"
+	},
+	"elements": [
+		{
+			"from": [6.75, 2.775, 0],
+			"to": [9.25, 12.275, 0.2],
+			"rotation": {"angle": 0, "axis": "y", "origin": [-0.125, 0, 0]},
+			"faces": {
+				"north": {"uv": [0, 0, 2.27556, 16], "texture": "#0"},
+				"east": {"uv": [13.72444, 0, 16, 16], "texture": "#0"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#0"},
+				"west": {"uv": [0, 0, 2.27556, 16], "texture": "#0"},
+				"up": {"uv": [0, 0, 16, 0.26947], "texture": "#0"},
+				"down": {"uv": [0, 15.73053, 16, 16], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [0, 3.75, 7.5]
+		},
+		"thirdperson_lefthand": {
+			"translation": [0, 3.75, 7.5]
+		},
+		"fixed": {
+			"translation": [0, 0, 8.5]
+		}
+	}
+}

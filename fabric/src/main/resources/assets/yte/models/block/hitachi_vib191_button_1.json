@@ -1,0 +1,36 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"texture_size": [225, 950],
+	"textures": {
+		"0": "yte:block/hitachi_vib221",
+		"1": "yte:block/black",
+		"particle": "yte:block/hitachi_vib221"
+	},
+	"elements": [
+		{
+			"from": [6, 2.525, 0],
+			"to": [10, 12.525, 0.45],
+			"rotation": {"angle": 0, "axis": "y", "origin": [-0.875, -0.125, 0]},
+			"faces": {
+				"north": {"uv": [0.87, 5.97248, 16, 2.70196], "texture": "#0"},
+				"east": {"uv": [3.16191, 0, 13.71429, 16], "texture": "#0"},
+				"south": {"uv": [3.16191, 0, 13.71429, 16], "texture": "#1"},
+				"west": {"uv": [3.16191, 0, 13.71429, 16], "texture": "#0"},
+				"up": {"uv": [13.03476, 1.17045, 10.78476, 0.6573], "texture": "#0"},
+				"down": {"uv": [7.37143, 0.50978, 9.62143, 1.39287], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [0, 3.75, 7.5]
+		},
+		"thirdperson_lefthand": {
+			"translation": [0, 3.75, 7.5]
+		},
+		"fixed": {
+			"translation": [0, 0, 8.5]
+		}
+	}
+}

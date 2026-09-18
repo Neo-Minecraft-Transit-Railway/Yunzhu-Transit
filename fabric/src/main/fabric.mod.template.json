@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "yte",
+  "version": "@version@",
+  "name": "Yunzhu Transit Extension",
+	"description": "云竹交通\n云筑工坊交通拓展",
+  "authors": [
+    "XFunny",
+    "MrNTKey",
+    "QBYQ"
+  ],
+  "contributors": [
+    "juebieshu",
+    "TanXifei"
+  ],
+  "contact": {
+    "homepage": "https://space.bilibili.com/3546779284932989",
+    "sources": "https://github.com/Yunzhu-Dev/Yunzhu-Transit-Extension",
+    "issues": "https://github.com/Yunzhu-Dev/Yunzhu-Transit-Extension/issues"
+  },
+  "license": "MIT License",
+  "icon": "assets/yte/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "top.xfunny.entrypoint.YunzhuTransitExtension"
+    ],
+    "client": [
+      "top.xfunny.entrypoint.YunzhuTransitExtensionClient"
+    ],"modmenu": [
+      "top.xfunny.entrypoint.ModMenu"
+    ]
+  },
+  "mixins": [
+    "yte.mixins.json"
+  ],
+  "depends": {
+    "fabric": "*",
+    "minecraft": "@minecraft@",
+    "mtr": ">=@mtrVersion@"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

@@ -1,0 +1,52 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"textures": {
+		"particle": "yte:block/steel_2",
+		"2": "yte:block/steel_2",
+		"3": "yte:block/mitsubishi_maxiez_button_lcd_1_screen",
+		"4": "yte:block/mitsubishi_maxiez_button_lcd_1"
+	},
+	"elements": [
+		{
+			"from": [4.725, 9, 0],
+			"to": [11.275, 13.25, 0.1],
+			"rotation": {"angle": 0, "axis": "y", "origin": [1, 8.375, -0.25]},
+			"faces": {
+				"north": {"uv": [0, 0, 16, 2.3125], "texture": "#2"},
+				"east": {"uv": [0, 0, 0.25, 13], "texture": "#2"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#2"},
+				"west": {"uv": [0, 0, 0.25, 13], "texture": "#2"},
+				"up": {"uv": [0, 0, 16, 0.25], "texture": "#2"},
+				"down": {"uv": [0, 0, 16, 0.25], "texture": "#2"}
+			}
+		},
+		{
+			"from": [5.625, 9.5, 0.11],
+			"to": [10.375, 12.75, 0.11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [6.25, 11.125, 0.1]},
+			"faces": {
+				"north": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"east": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#4"},
+				"west": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"up": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"down": {"uv": [0, 0, 2, 2], "texture": "#2"}
+			}
+		},
+		{
+			"from": [6.125, 9.75, 0.12],
+			"to": [9.875, 12.5, 0.12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [6.25, 11.125, 0.1]},
+			"faces": {
+				"north": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"east": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#3"},
+				"west": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"up": {"uv": [0, 0, 2, 2], "texture": "#2"},
+				"down": {"uv": [0, 0, 2, 2], "texture": "#2"}
+			}
+		}
+	]
+}

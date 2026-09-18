@@ -1,0 +1,32 @@
+modLoader = "javafml"
+loaderVersion = "[36,)"
+license = "MIT"
+
+[[mods]]
+modId = "yte"
+version = "@version@"
+displayName = "Yunzhu Transit Extension"
+authors = "xfunny\nMrNTKey\nQBYQ"
+description = "云竹交通\n云筑工坊交通拓展"
+logoFile = "icon.png"
+
+[[dependencies.yte]]
+modId = "forge"
+mandatory = true
+versionRange = "[36,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.yte]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[@minecraft@]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.yte]]
+modId = "mtr"
+mandatory = true
+versionRange = "[4.0.0,4.1)"
+ordering = "AFTER"
+side = "BOTH"

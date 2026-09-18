@@ -1,0 +1,20 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/group_lift_buttons_link"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "yte:selected": 0.5
+      },
+      "model": "yte:item/yte_group_lift_buttons_link_connector_selected"
+    },
+    {
+      "predicate": {
+        "yte:selected": 1
+      },
+      "model": "yte:item/yte_group_lift_buttons_link_connector_selected_2"
+    }
+  ]
+}

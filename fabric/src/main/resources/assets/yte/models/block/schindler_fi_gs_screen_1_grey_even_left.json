@@ -1,0 +1,32 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"texture_size": [295, 1042],
+	"textures": {
+		"1": "yte:block/schindler_linea_glass_1_black",
+		"2": "yte:block/metal",
+		"particle": "yte:block/schindler_linea_panel_1_single"
+	},
+	"elements": [
+		{
+			"from": [12.5, 10.6, 0],
+			"to": [16, 13.4, 0.1],
+			"rotation": {"angle": 0, "axis": "y", "origin": [11.375, 11.125, 0]},
+			"faces": {
+				"north": {"uv": [0, 14.32143, 8, 16], "texture": "#2"},
+				"south": {"uv": [0, 0, 8, 16], "texture": "#2"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#2"},
+				"up": {"uv": [0, 0, 8, 16], "texture": "#2"},
+				"down": {"uv": [0, 0, 8, 16], "texture": "#2"}
+			}
+		},
+		{
+			"from": [14, 11, 0.11],
+			"to": [16, 13, 0.11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [11.375, 11.125, 0.1]},
+			"faces": {
+				"south": {"uv": [0, 0, 16, 16], "texture": "#1"}
+			}
+		}
+	]
+}

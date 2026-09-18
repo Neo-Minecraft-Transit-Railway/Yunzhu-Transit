@@ -1,0 +1,102 @@
+import com.lx862.jcm.buildtools.BuildTools
+
+plugins {
+	id 'fabric-loom' version '1.17.19'
+}
+
+final BuildTools buildTools = new BuildTools(minecraft_version)
+
+version = "${rootProject.mod_version}+${rootProject.minecraft_version}"
+
+loom {
+	runConfigs.configureEach { ideConfigGenerated = true }
+	mixin {
+		useLegacyMixinAp = true
+		setDefaultRefmapName("yte.refmap.json")
+	}
+}
+
+repositories {
+	maven { url = "https://maven.terraformersmc.com/" }
+	flatDir { dirs "${rootProject.projectDir}/../libs" }
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${buildTools.dependencies.fabricLoader()}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${buildTools.dependencies.fabricApi()}"
+	modCompileOnly "com.terraformersmc:modmenu:${buildTools.dependencies.modMenu()}"
+	compileOnly files("${rootProject.projectDir}/../libs/MTR-fabric-4.0.5+1.21.11-compile.jar")
+	// -dev compile jar has mapping + org.mtr.mod; remapped runtime jar also has org.mtr.core / libraries
+	compileOnly files("${rootProject.projectDir}/../libs/MTR-fabric-4.0.5+1.21.11.jar")
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.compilerArgs << '-Xmaxerrs' << '2000'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+	withSourcesJar()
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${base.archivesName.get()}" }
+	}
+}
+
+tasks.register('generateItemDefinitions') {
+	def modelsDir = file('src/main/resources/assets/yte/models/item')
+	def outputDir = layout.buildDirectory.dir('generated/resources/assets/yte/items')
+	inputs.dir(modelsDir)
+	outputs.dir(outputDir)
+
+	doLast {
+		def outDir = outputDir.get().asFile
+		outDir.mkdirs()
+		def jsonSlurper = new groovy.json.JsonSlurper()
+		modelsDir.eachFile { modelFile ->
+			if (!modelFile.name.endsWith('.json')) {
+				return
+			}
+			def itemId = modelFile.name - '.json'
+			def sourceModel = jsonSlurper.parse(modelFile)
+			def itemModel = [type: 'minecraft:model', model: "yte:item/${itemId}"]
+			def overrides = sourceModel.overrides
+			if (overrides instanceof List && !overrides.isEmpty()) {
+				def firstPredicate = overrides[0].predicate as Map
+				if (firstPredicate.size() != 1) {
+					throw new GradleException("Unsupported multi-property item override in ${modelFile}")
+				}
+				def predicate = firstPredicate.keySet().first().toString()
+				def entries = overrides.collect { override ->
+					def overridePredicate = override.predicate as Map
+					if (overridePredicate.size() != 1 || !overridePredicate.containsKey(predicate)) {
+						throw new GradleException("Unsupported item override in ${modelFile}")
+					}
+					def model = override.model.toString()
+					if (!model.contains(':')) {
+						model = "yte:${model}"
+					}
+					[threshold: overridePredicate[predicate] as Number, model: [type: 'minecraft:model', model: model]]
+				}
+				itemModel = [
+					type: 'minecraft:range_dispatch',
+					property: 'mtr:legacy_predicate',
+					predicate: predicate,
+					fallback: itemModel,
+					entries: entries
+				]
+			}
+			new File(outDir, modelFile.name).text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([model: itemModel])) + '\n'
+		}
+	}
+}
+
+sourceSets.main.resources.srcDir layout.buildDirectory.dir('generated/resources')
+processResources.dependsOn generateItemDefinitions
+tasks.named('sourcesJar').configure { dependsOn generateItemDefinitions }

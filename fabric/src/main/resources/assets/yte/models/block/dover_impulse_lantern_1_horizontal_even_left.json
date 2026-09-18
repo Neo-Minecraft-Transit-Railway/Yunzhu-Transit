@@ -1,0 +1,50 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"1": "yte:block/dover_impulse_lantern_1_black",
+		"particle": "yte:block/steel_2",
+		"3_2": "yte:block/steel_2"
+	},
+	"elements": [
+		{
+			"from": [13.25, 7.9, 0],
+			"to": [16, 10.7, 0.1],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9, 7.5, -0.25]},
+			"faces": {
+				"north": {"uv": [0, 0, 8, 2.3125], "texture": "#3_2"},
+				"east": {"uv": [0, 0, 0.25, 13], "texture": "#3_2"},
+				"south": {"uv": [0, 0, 8, 16], "texture": "#3_2"},
+				"west": {"uv": [0, 0, 0.25, 13], "texture": "#3_2"},
+				"up": {"uv": [0, 0, 8, 0.25], "texture": "#3_2"},
+				"down": {"uv": [0, 0, 8, 0.25], "texture": "#3_2"}
+			}
+		},
+		{
+			"from": [13.75, 8.3, 0.1],
+			"to": [16, 10.3, 0.12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [9, 7.5, -0.25]},
+			"faces": {
+				"north": {"uv": [0, 0, 16, 2.3125], "texture": "#3_2"},
+				"east": {"uv": [0, 0, 0.25, 13], "texture": "#3_2"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#1"},
+				"west": {"uv": [0, 0, 0.25, 13], "texture": "#3_2"},
+				"up": {"uv": [0, 0, 8, 0.25], "texture": "#3_2"},
+				"down": {"uv": [0, 0, 16, 0.25], "texture": "#3_2"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [0, 0, 6.75]
+		}
+	},
+	"groups": [
+		{
+			"name": "dover_impulse_lantern_1_horizontal_odd",
+			"origin": [8, 8, 8],
+			"color": 0,
+			"children": [0, 1]
+		}
+	]
+}

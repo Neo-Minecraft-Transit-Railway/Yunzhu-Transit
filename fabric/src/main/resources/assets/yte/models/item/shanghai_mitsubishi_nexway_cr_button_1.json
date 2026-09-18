@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/shanghai_mitsubishi_nexway_cr_button_1"
+  }
+}

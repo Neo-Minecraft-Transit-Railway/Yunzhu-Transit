@@ -1,0 +1,88 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "block/block",
+  "textures": {
+    "0": "yte:block/panel",
+    "1": "yte:block/schindler_d_series_screen_1",
+    "particle": "yte:block/panel"
+  },
+  "elements": [
+    {
+      "from": [
+        12.25,
+        9,
+        0
+      ],
+      "to": [
+        16,
+        14,
+        0.1
+      ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          16.25,
+          8,
+          -0.25
+        ]
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            8,
+            13
+          ],
+          "texture": "#0"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            13
+          ],
+          "texture": "#0"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            8,
+            16
+          ],
+          "texture": "#1"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            0.25,
+            13
+          ],
+          "texture": "#0"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.25
+          ],
+          "texture": "#0"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            8,
+            0.25
+          ],
+          "texture": "#0"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+configure(subprojects.findAll { it.name == 'fabric' }) {
+	apply plugin: "java"
+
+	group project.maven_group
+	version "${rootProject.properties.mod_version}+${rootProject.properties.minecraft_version}"
+
+	base {
+		archivesName = "${rootProject.archives_base_name}-${project.properties.loader_name}"
+	}
+
+	dependencies {
+		implementation 'com.google.code.findbugs:jsr305:+'
+	}
+
+	repositories {
+		flatDir { dirs "${rootProject.projectDir}/../libs" }
+	}
+
+	ext {
+		full_mod_version = version + artifact_date
+	}
+
+	compileJava {
+		options.encoding = 'UTF-8'
+	}
+
+	processResources {
+		inputs.property "version", version + artifact_date
+		inputs.property "minecraft_version", rootProject.minecraft_version
+		inputs.property "mtr_version", rootProject.mtr_version
+
+		filesMatching("fabric.mod.json") {
+			expand(
+				"version": project.full_mod_version,
+				"minecraft_version": rootProject.minecraft_version,
+				"mtr_version": rootProject.mtr_version
+			) {
+				escapeBackslash = true
+			}
+		}
+	}
+}

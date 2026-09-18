@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/kone_m_button_2"
+    },
+    "facing=east": {
+      "model": "yte:block/kone_m_button_2",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/kone_m_button_2",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/kone_m_button_2",
+      "y": 270
+    }
+  }
+}

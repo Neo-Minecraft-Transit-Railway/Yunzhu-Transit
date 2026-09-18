@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/schindler_z_line_3_keypad_1"
+  }
+}

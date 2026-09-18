@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "yte:item/fujitec_mic400_screen_1_horizontal_odd"
+  }
+}

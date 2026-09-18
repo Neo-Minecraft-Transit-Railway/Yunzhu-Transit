@@ -1,0 +1,605 @@
+// ============================================================
+// deploy.gradle — YTE 部署 & 测试自动化
+// 用法:
+//   ./gradlew deployForTesting -PminecraftDir=D:/Minecraft/test/.minecraft
+//   ./gradlew testLaunch       -PminecraftDir=D:/Minecraft/test/.minecraft
+//   ./gradlew fullTest         -PminecraftDir=D:/Minecraft/test/.minecraft
+//   ./gradlew buildAllVersions -PmcVersions=1.20.1
+// ============================================================
+
+
+
+// ---------- 通用 ----------
+def defaultMcVersions = "1.16.5,1.17.1,1.18.2,1.19.2,1.19.4,1.20.1,1.20.4"
+def defaultLoaders    = "fabric,forge"
+def defaultMtrVersion = "4.0.4"
+
+// ============================================================
+// deployForTesting — MTR 自动下载 + 智能匹配部署
+// ============================================================
+tasks.register("deployForTesting") {
+    description = "Download MTR from Modrinth and deploy MTR + YTE to local Minecraft version folders"
+    group = "deployment"
+
+    doLast {
+        def enableDownload   = project.findProperty("enableDownload")?.toBoolean() ?: false
+        def maxThreads       = (project.findProperty("maxThreads") ?: "16") as int
+        def targetMtrVersion = project.findProperty("targetMtrVersion") ?: defaultMtrVersion
+        def mcVersionsRaw    = project.findProperty("mcVersions") ?: defaultMcVersions
+        def loadersRaw       = project.findProperty("loaders") ?: defaultLoaders
+        def minecraftDir     = project.findProperty("minecraftDir") ?: "${System.getProperty("user.home")}/.minecraft"
+
+        def mcVersions = mcVersionsRaw.split(",").collect { it.trim() }
+        def loaders    = loadersRaw.split(",").collect { it.trim() }
+        def versionsDir = new File(minecraftDir, "versions")
+
+        if (!versionsDir.exists()) {
+            throw new GradleException("versions directory not found: ${versionsDir.absolutePath}\nSpecify with -PminecraftDir=...")
+        }
+
+        def mtrDir = project.findProperty("mtrDir") ?
+            new File(project.findProperty("mtrDir")) :
+            new File(new File(minecraftDir).parentFile, "mtrmod")
+        if (!mtrDir.exists()) mtrDir.mkdirs()
+
+        logger.lifecycle(banner("YTE Deploy For Testing", [
+            "Minecraft Dir": minecraftDir,
+            "MTR Dir"      : mtrDir.absolutePath,
+            "MTR Version"  : targetMtrVersion,
+            "MC Versions"  : mcVersionsRaw,
+            "Loaders"      : loadersRaw,
+            "Download MTR" : enableDownload.toString(),
+            "Max Threads"  : maxThreads.toString()
+        ]))
+
+        // --- 下载 MTR ---
+        if (enableDownload) {
+            downloadMtr(targetMtrVersion, mcVersions, loaders, mtrDir, maxThreads, logger)
+        }
+
+        // --- 下载 Fabric API（Fabric 版本必须） ---
+        logger.lifecycle("\n[STEP 1.5] Ensuring Fabric API for Fabric versions...")
+        downloadFabricApi(mcVersions, minecraftDir, logger)
+
+        // --- 收集 YTE jars ---
+        logger.lifecycle("\n[STEP 2] Deploying MTR & YTE to versions folder...")
+        def yteJars = collectYteJars(project)
+
+        if (yteJars.isEmpty()) {
+            logger.warn("  No YTE jars found in build/release/ or build/libs/.")
+        } else {
+            logger.lifecycle("  Found ${yteJars.size()} YTE jars:")
+            yteJars.each { j -> logger.lifecycle("    [${j.loader}] ${j.file.name}") }
+        }
+
+        // --- 部署 ---
+        def deployCount = 0
+        def skipCount  = 0
+
+        mcVersions.each { mc ->
+            loaders.each { loader ->
+                def versionName = "${mc}-${loader}"
+                def modsDir = new File(versionsDir, "${versionName}/mods")
+                if (!modsDir.exists()) {
+                    logger.lifecycle("  SKIP ${versionName} - mods dir not found"); skipCount++; return
+                }
+
+                logger.lifecycle("\n  >>> Processing ${versionName}")
+
+                // 匹配 MTR
+                def mtrFile = matchMtrJar(mtrDir, loader, mc, targetMtrVersion)
+                if (mtrFile == null) {
+                    logger.error("    [!] No matching MTR jar for ${versionName}"); return
+                }
+
+                // 匹配 YTE
+                def yteFile = matchYteJar(yteJars, loader, mc)
+
+                // 复制
+                try {
+                    modsDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.jar/) { f ->
+                        def name = f.name.toLowerCase()
+                        if (name.contains("mtr") || name.contains("yunzhu") || name.contains("yte")) {
+                            if (f.delete()) logger.lifecycle("    - Removed old: ${f.name}")
+                        }
+                    }
+                    new File(modsDir, mtrFile.name).bytes = mtrFile.bytes
+                    logger.lifecycle("    + MTR: ${mtrFile.name}")
+                    if (yteFile != null) {
+                        new File(modsDir, yteFile.name).bytes = yteFile.bytes
+                        logger.lifecycle("    + YTE: ${yteFile.name}")
+                    } else {
+                        logger.lifecycle("    - YTE: Not built for this loader/version, skipped")
+                    }
+                    deployCount++
+                } catch (Exception e) {
+                    logger.error("    [X] Failed: ${e.message}")
+                }
+            }
+        }
+
+        logger.lifecycle(banner("Deploy Summary", [
+            "Deployed": "${deployCount} versions",
+            "Skipped" : "${skipCount} versions"
+        ]))
+    }
+}
+
+// ============================================================
+// testLaunch — 批量启动测试客户端
+// ============================================================
+tasks.register("testLaunch") {
+    description = "Launch Minecraft test clients and verify YTE + MTR load successfully"
+    group = "deployment"
+
+    doLast {
+        def minecraftDir = project.findProperty("minecraftDir") ?: "${System.getProperty("user.home")}/.minecraft"
+        def testVersion  = project.findProperty("testVersion") ?: "all"
+        def timeoutSec   = (project.findProperty("launchTimeout") ?: "120") as int
+        def javaHome     = project.findProperty("javaHome") ?: System.getProperty("java.home")
+
+        def versionsDir = new File(minecraftDir, "versions")
+        if (!versionsDir.exists()) throw new GradleException("versions directory not found: ${versionsDir}")
+
+        def versionsToTest = resolveTestVersions(testVersion, versionsDir)
+        if (versionsToTest.isEmpty()) { logger.warn("No versions to test."); return }
+
+        versionsToTest.sort { a, b ->
+            def aF = a.contains("abric") || a.contains("fabric")
+            def bF = b.contains("abric") || b.contains("fabric")
+            aF != bF ? (aF ? -1 : 1) : a.compareTo(b)
+        }
+
+        logger.lifecycle(banner("YTE Batch Test Launch", [
+            "Minecraft Dir": minecraftDir,
+            "Java Home"    : javaHome,
+            "Timeout/v"    : "${timeoutSec}s",
+            "Versions"     : "${versionsToTest.size()} total"
+        ]))
+
+        def results = []
+        versionsToTest.eachWithIndex { ver, idx ->
+            def versionDir  = new File(versionsDir, ver)
+            def versionJson = new File(versionDir, "${ver}.json")
+            if (!versionJson.exists()) {
+                results << [ver, "SKIP", 0, "version JSON not found"]; return
+            }
+            results << launchOne(ver, minecraftDir, versionDir, versionJson, javaHome, timeoutSec)
+        }
+
+        printResultTable(results, logger)
+
+        def failed = results.findAll { it[1] == "FAIL" }
+        if (failed) throw new GradleException("${failed.size()} test(s) failed")
+    }
+}
+
+// ============================================================
+// buildAllVersions — 为所有目标 MC 版本分别构建 YTE
+// ============================================================
+tasks.register("buildAllVersions") {
+    description = "Build YTE for all target Minecraft versions"
+    group = "deployment"
+
+    doLast {
+        def mcVersionsRaw = project.findProperty("mcVersions") ?: defaultMcVersions
+        def mcVersions = mcVersionsRaw.split(",").collect { it.trim() }
+        def isWin = System.getProperty("os.name").toLowerCase().contains("win")
+        def gradlew = isWin ? "gradlew.bat" : "./gradlew"
+        def results = []
+
+        mcVersions.each { mc ->
+            logger.lifecycle("\n═══════════════════════════════════════")
+            logger.lifecycle("  Building YTE for Minecraft ${mc}...")
+            logger.lifecycle("═══════════════════════════════════════")
+
+            def pb = new ProcessBuilder("cmd", "/c", gradlew,
+                ":fabric:build", ":forge:build",
+                "-PminecraftVersion=${mc}", "-x", "test", "--no-daemon")
+            pb.directory(project.rootDir)
+            pb.redirectErrorStream(true)
+
+            def process = pb.start()
+            process.inputStream.eachLine { line ->
+                if (line.contains("BUILD SUCCESS") || line.contains("BUILD FAIL") || line.contains("ERROR"))
+                    logger.lifecycle("  | ${line}")
+            }
+
+            def exitCode = process.waitFor()
+            if (exitCode == 0) {
+                logger.lifecycle("  ✓ Minecraft ${mc} BUILD SUCCESS")
+                results << [mc, "BUILT"]
+            } else {
+                logger.error("  ✗ Minecraft ${mc} BUILD FAILED (exit ${exitCode})")
+                results << [mc, "FAIL"]
+            }
+        }
+
+        logger.lifecycle("\n═══════════════════════════════════════")
+        results.each { r -> logger.lifecycle("  ${r[1] == 'BUILT' ? '✓' : '✗'} ${r[0]} ${r[1]}") }
+
+        def failed = results.findAll { it[1] == "FAIL" }
+        if (failed) throw new GradleException("${failed.size()} version(s) failed: ${failed.collect{it[0]}.join(", ")}")
+    }
+}
+
+// ============================================================
+// fullTest — 一键完整测试：部署 + 启动验证
+// ============================================================
+tasks.register("fullTest") {
+    description = "Deploy YTE + MTR to all versions and launch-test every one"
+    group = "deployment"
+
+    dependsOn("deployForTesting", "testLaunch")
+    tasks.named("testLaunch").get().mustRunAfter("deployForTesting")
+
+    doLast {
+        def minecraftDir = project.findProperty("minecraftDir") ?: "${System.getProperty("user.home")}/.minecraft"
+        logger.lifecycle(banner("✓ Full pipeline completed!", [
+            "Target": minecraftDir,
+            "Flow" : "Deploy → Test"
+        ]))
+    }
+}
+
+// ============================================================
+// 辅助函数
+// ============================================================
+
+def banner(title, Map<String, String> fields) {
+    def sb = new StringBuilder()
+    sb.append("\n╔══════════════════════════════════════════════════╗\n")
+    sb.append("║  ${title.padRight(46)}║\n")
+    sb.append("╠──────────────────────────────────────────────────╣\n")
+    fields.each { k, v -> sb.append("║  ${k.padRight(14)}: ${v.toString().take(30).padRight(30)}║\n") }
+    sb.append("╚══════════════════════════════════════════════════╝\n")
+    return sb.toString()
+}
+
+def collectYteJars(project) {
+    def yteJars = []
+    def releaseDir = new File(project.rootDir, "build/release")
+    if (releaseDir.exists()) {
+        releaseDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.jar/) { f ->
+            if (!f.name.endsWith("-sources.jar")) {
+                def loader = f.name.toLowerCase().contains("fabric") ? "fabric" :
+                             f.name.toLowerCase().contains("forge") ? "forge" : null
+                if (loader != null) yteJars << [loader: loader, file: f]
+            }
+        }
+    }
+    if (yteJars.isEmpty()) {
+        ["fabric", "forge"].each { loader ->
+            def libDir = new File(project.rootDir, "${loader}/build/libs")
+            if (libDir.exists()) {
+                libDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.jar/) { f ->
+                    if (!f.name.endsWith("-sources.jar") && !f.name.endsWith("-dev.jar"))
+                        yteJars << [loader: loader, file: f]
+                }
+            }
+        }
+    }
+    return yteJars
+}
+
+def matchMtrJar(mtrDir, loader, mc, targetMtrVersion) {
+    def candidates = []
+    mtrDir.eachFileMatch(groovy.io.FileType.FILES, ~/.*\.jar/) { f ->
+        def name = f.name.toLowerCase()
+        if (name.contains(loader) && name.contains(mc) &&
+            (name.contains(targetMtrVersion) || name.contains("hotfix")))
+            candidates << f
+    }
+    return candidates.sort { -it.lastModified() }.find()
+}
+
+def matchYteJar(yteJars, loader, mc) {
+    def f = yteJars.find { j -> j.loader == loader && j.file.name.contains(mc) }?.file
+    return f ?: yteJars.find { j -> j.loader == loader }?.file
+}
+
+def downloadMtr(targetMtrVersion, mcVersions, loaders, mtrDir, maxThreads, logger) {
+    logger.lifecycle("\n[STEP 1] Fetching metadata from Modrinth...")
+    def apiUrl = "https://api.modrinth.com/v2/project/minecraft-transit-railway/version".toURL()
+    def versionsJson
+    try {
+        versionsJson = new groovy.json.JsonSlurper().parse(apiUrl.newReader(requestProperties: ["User-Agent": "YTE-Deploy"]))
+        logger.lifecycle("  Fetched ${versionsJson.size()} versions")
+    } catch (Exception e) {
+        throw new GradleException("Modrinth API request failed", e)
+    }
+
+    def jobs = []
+    def lock = new Object()
+    mcVersions.each { mc ->
+        loaders.each { loader ->
+            def mv = versionsJson.find { v ->
+                v.version_number.contains(targetMtrVersion) && v.game_versions.contains(mc) && v.loaders.contains(loader)
+            }
+            if (mv?.files) {
+                def url = mv.files[0].url
+                def name = mv.files[0].filename
+                def target = new File(mtrDir, name)
+                if (!target.exists()) {
+                    synchronized (lock) { logger.lifecycle("  Queued: ${name}") }
+                    jobs << Thread.start {
+                        try {
+                            target.withOutputStream { it << url.toURL().openStream() }
+                            synchronized (lock) { logger.lifecycle("  Downloaded: ${name}") }
+                        } catch (Exception e) {
+                            synchronized (lock) { logger.error("  Failed: ${name}") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (jobs) {
+        logger.lifecycle("\n  Downloading (${jobs.size()} files, max ${maxThreads} threads)...")
+        def pending = jobs.toList()
+        while (pending) {
+            def batch = pending.take(maxThreads); pending = pending.drop(maxThreads)
+            batch.each { it.join() }
+        }
+        logger.lifecycle("  Downloads complete.\n")
+    } else {
+        logger.lifecycle("  All files already cached.\n")
+    }
+}
+
+def resolveTestVersions(testVersion, versionsDir) {
+    if (testVersion == "all") {
+        def list = []
+        versionsDir.listFiles().each { dir ->
+            if (dir.isDirectory()) {
+                def modsDir = new File(dir, "mods")
+                if (modsDir.exists() && modsDir.listFiles()?.any { it.name.endsWith(".jar") })
+                    list << dir.name
+            }
+        }
+        return list
+    }
+    return testVersion.split(",").collect { it.trim() }.findAll { it }
+}
+
+def launchOne(ver, minecraftDir, versionDir, versionJson, javaHome, timeoutSec) {
+    def json = new groovy.json.JsonSlurper().parse(versionJson)
+    def assetsDir = new File(minecraftDir, "assets")
+    def librariesDir = new File(minecraftDir, "libraries")
+    def logFile      = new File(versionDir, "logs/latest.log")
+    def crashDir     = new File(versionDir, "crash-reports")
+    def nativesDir   = new File(versionDir, "natives-windows-x86_64")
+    if (!nativesDir.exists()) nativesDir = new File(versionDir, "natives")
+    def isForge = ver.toLowerCase().contains("forge")
+    def cpSep = File.pathSeparator
+
+    // 选择正确的 Java（仅 1.16.5 必须用 Java 8，其他用默认 JDK 24）
+    def requiredJava = json.javaVersion?.majorVersion
+    if (requiredJava != null && requiredJava <= 8) {
+        def j8 = "E:/jdks/azul-1.8.0_452"
+        if (new File(j8).exists()) javaHome = j8
+    }
+    def javaExe = "${javaHome}/bin/java${System.getProperty("os.name").toLowerCase().contains("win") ? ".exe" : ""}"
+
+    logger.lifecycle("\n  [${ver}] ${isForge ? 'Forge' : 'Fabric'} - Launching...")
+    if (logFile.exists()) logFile.delete()
+
+    // 构建 classpath
+    def classpath = new StringBuilder(new File(versionDir, "${ver}.jar").absolutePath)
+    json.libraries.each { lib ->
+        if (lib.rules != null) {
+            def allowed = lib.rules.any { it.action == "allow" && it.os?.name?.toLowerCase() == "windows" }
+            if (!allowed && lib.rules.any { it.action == "allow" && it.os != null }) return
+        }
+        def parts = lib.name.split(":")
+        if (parts.length >= 3) {
+            def group = parts[0].replace(".", "/"); def artifact = parts[1]; def v = parts[2]
+            def cl = parts.length > 3 ? "-${parts[3]}" : ""
+            def jp = new File(librariesDir, "${group}/${artifact}/${v}/${artifact}-${v}${cl}.jar")
+            if (jp.exists()) classpath.append(cpSep).append(jp.absolutePath)
+        }
+    }
+
+    // 构建命令
+    def jvmArgs = []
+    def gameArgs = [
+        "--username", "YTETester", "--version", ver,
+        "--gameDir", versionDir.absolutePath, "--assetsDir", assetsDir.absolutePath,
+        "--assetIndex", json.assetIndex?.id ?: json.assets,
+        "--uuid", "00000000-0000-0000-0000-000000000000",
+        "--accessToken", "0", "--clientId", "0", "--xuid", "0",
+        "--userType", "mojang", "--versionType", "release"
+    ]
+
+    if (isForge) {
+        def fv = "47.4.0"; def mv = ver.replaceAll(/-Forge/, ""); def mp = "20230612.114412"; def lt = "forgeclient"
+        def gal = json.arguments?.game
+        if (gal != null) {
+            for (int i = 0; i < gal.size() - 1; i++) {
+                if (gal[i] instanceof String) {
+                    if (gal[i] == "--fml.forgeVersion") fv = gal[i+1].toString()
+                    if (gal[i] == "--fml.mcpVersion") mp = gal[i+1].toString()
+                    if (gal[i] == "--fml.mcVersion") mv = gal[i+1].toString()
+                    if (gal[i] == "--launchTarget") lt = gal[i+1].toString()
+                }
+            }
+        }
+        if (fv == "47.4.0") {
+            json.libraries?.each { lib ->
+                if (lib.name.contains("net.minecraftforge:forge:")) {
+                    def m = lib.name.split(":")[2] =~ /(\d+\.\d+\.\d+)/
+                    if (m) fv = m[0][1]
+                }
+            }
+        }
+
+        jvmArgs = [
+            "-Xmx2G", "-Djava.library.path=${nativesDir.absolutePath}",
+            "-Dminecraft.launcher.brand=YTE-Gradle", "-Dminecraft.launcher.version=test",
+            "-Djava.net.preferIPv6Addresses=system",
+            "-DignoreList=bootstraplauncher,securejarhandler,asm-commons,asm-util,asm-analysis,asm-tree,asm,JarJarFileSystems,client-extra,fmlcore,javafmllanguage,lowcodelanguage,mclanguage,forge-,${ver}.jar,${ver}.jar",
+            "-DmergeModules=jna-5.10.0.jar,jna-platform-5.10.0.jar",
+            "-DlibraryDirectory=${librariesDir.absolutePath}"
+        ]
+
+        def fm = fv?.isNumber() ? fv.split("\\.")[0].toInteger() : 0
+        if (fm >= 37) {
+            jvmArgs += [
+                "-p", buildForgeModulePath(librariesDir), "--add-modules", "ALL-MODULE-PATH",
+                "--add-opens", "java.base/java.util.jar=cpw.mods.securejarhandler",
+                "--add-opens", "java.base/java.lang.invoke=cpw.mods.securejarhandler",
+                "--add-exports", "java.base/sun.security.util=cpw.mods.securejarhandler",
+                "--add-exports", "jdk.naming.dns/com.sun.jndi.dns=java.naming"
+            ]
+        }
+        jvmArgs += ["-cp", classpath.toString()]
+        gameArgs += ["--launchTarget", lt, "--fml.forgeVersion", fv, "--fml.mcVersion", mv,
+                     "--fml.forgeGroup", "net.minecraftforge", "--fml.mcpVersion", mp]
+    } else {
+        jvmArgs = ["-Xmx2G", "-Djava.library.path=${nativesDir.absolutePath}",
+                   "-Dminecraft.launcher.brand=YTE-Gradle", "-Dminecraft.launcher.version=test"]
+    }
+
+    def mainClass = json.mainClass
+    def command = isForge
+        ? ([javaExe] + jvmArgs + [mainClass] + gameArgs).collect { it.toString() }
+        : ([javaExe] + jvmArgs + ["-cp", classpath.toString(), mainClass] + gameArgs).collect { it.toString() }
+
+    // 启动
+    def process
+    try {
+        def cmdString = command.join(" ")
+        if (cmdString.length() > 7000) {
+            def argFile = File.createTempFile("yte-launch-", ".args", versionDir)
+            argFile.deleteOnExit()
+            argFile.text = command.drop(1).collect { it.toString().contains(" ") ? "\"${it}\"" : it.toString() }.join("\n")
+            command = [command[0].toString(), "@${argFile.absolutePath}".toString()]
+        }
+        def pb = new ProcessBuilder(command)
+        pb.directory(versionDir); pb.redirectErrorStream(true)
+        process = pb.start()
+        Thread.start { process.inputStream.eachLine {} }
+    } catch (Exception e) {
+        return [ver, "FAIL", 0, "Launch error: ${e.message}"]
+    }
+
+    // 监控
+    def success = false; def crashed = false; def yteLoaded = false
+    def startTime = System.currentTimeMillis(); def logOffset = 0L
+
+    while (System.currentTimeMillis() - startTime < timeoutSec * 1000L) {
+        if (!process.isAlive()) { if (process.exitValue() != 0) crashed = true; break }
+        if (crashDir.exists()) {
+            def cfs = crashDir.listFiles()?.findAll { it.name.endsWith(".txt") }
+            if (cfs?.any { it.lastModified() > startTime }) { crashed = true; break }
+        }
+        if (logFile.exists() && logFile.length() > logOffset) {
+            logFile.withReader("UTF-8") { r ->
+                r.skip(logOffset)
+                def lines = r.readLines(); logOffset = logFile.length()
+                for (line in lines) {
+                    if (line.contains("initialized successfully")) { success = true; break }
+                    if (line.contains("注册声音事件") || line.contains("正在注册方块") ||
+                        line.contains("Registering Sound Events") || line.contains("Registering Blocks"))
+                        yteLoaded = true
+                    if (line.contains("Incompatible mods") || line.contains("Mod resolution failed") ||
+                        line.contains("[main/FATAL]") || line.contains("Failed to start"))
+                        { crashed = true; break }
+                }
+            }
+        }
+        if (success || crashed) break
+        Thread.sleep(1000)
+    }
+
+    if (process.isAlive()) process.destroyForcibly()
+    def elapsed = (System.currentTimeMillis() - startTime) / 1000.0
+
+    if (success) {
+        logger.lifecycle("  [${ver}] ✓ PASS (${String.format("%.1f", elapsed)}s) - YTE init confirmed")
+        return [ver, "PASS", elapsed, "YTE initialized successfully"]
+    } else if (yteLoaded && !crashed) {
+        logger.lifecycle("  [${ver}] ✓ PASS (${String.format("%.1f", elapsed)}s) - YTE registration detected")
+        return [ver, "PASS", elapsed, "YTE registration detected"]
+    } else if (crashed) {
+        logger.error("  [${ver}] ✗ FAIL (${String.format("%.1f", elapsed)}s)")
+        def detail = "crashed"
+        if (logFile.exists()) {
+            def errs = logFile.text.readLines().findAll {
+                it.contains("ERROR") || it.contains("Incompatible") || it.contains("FATAL") || it.contains("Failed")
+            }
+            if (errs) detail = errs.take(2).join(" | ").take(80)
+        }
+        return [ver, "FAIL", elapsed, detail]
+    } else {
+        logger.error("  [${ver}] ✗ TIMEOUT (${String.format("%.1f", elapsed)}s)")
+        return [ver, "FAIL", elapsed, "timeout - no YTE activity"]
+    }
+}
+
+def buildForgeModulePath(librariesDir) {
+    def cpSep = File.pathSeparator
+    def modules = [
+        "cpw/mods/bootstraplauncher/1.1.2/bootstraplauncher-1.1.2.jar",
+        "cpw/mods/securejarhandler/2.1.10/securejarhandler-2.1.10.jar",
+        "org/ow2/asm/asm-commons/9.7.1/asm-commons-9.7.1.jar",
+        "org/ow2/asm/asm-util/9.7.1/asm-util-9.7.1.jar",
+        "org/ow2/asm/asm-analysis/9.7.1/asm-analysis-9.7.1.jar",
+        "org/ow2/asm/asm-tree/9.7.1/asm-tree-9.7.1.jar",
+        "org/ow2/asm/asm/9.7.1/asm-9.7.1.jar",
+        "net/minecraftforge/JarJarFileSystems/0.3.19/JarJarFileSystems-0.3.19.jar"
+    ]
+    return modules.collect { new File(librariesDir, it).absolutePath }.join(cpSep)
+}
+
+def downloadFabricApi(mcVersions, minecraftDir, logger) {
+    // 如果已存在且 > 500KB，跳过
+    mcVersions.each { mc ->
+        def modsDir = new File(minecraftDir, "versions/${mc}-fabric/mods")
+        if (!modsDir.exists()) return
+
+        def existing = modsDir.listFiles()?.find { it.name.startsWith("fabric-api-") && it.name.endsWith(".jar") }
+        if (existing != null && existing.length() > 500_000) {
+            logger.lifecycle("  ${mc}: fabric-api OK (${existing.name})")
+            return
+        }
+
+        // 删除无效存根
+        if (existing != null) existing.delete()
+
+        // 从 Modrinth 下载
+        def apiUrl = "https://api.modrinth.com/v2/project/fabric-api/version?loaders=[%22fabric%22]&game_versions=[%22${mc}%22]"
+        try {
+            def resp = new groovy.json.JsonSlurper().parse(apiUrl.toURL().newReader(requestProperties: ["User-Agent": "YTE-Deploy"]))
+            if (resp.size() > 0 && resp[0].files.size() > 0) {
+                def file = resp[0].files[0]
+                def dest = new File(modsDir, file.filename)
+                dest.withOutputStream { it << file.url.toURL().openStream() }
+                logger.lifecycle("  ${mc}: Downloaded ${file.filename}")
+            } else {
+                logger.warn("  ${mc}: Fabric API not found on Modrinth")
+            }
+        } catch (Exception e) {
+            logger.warn("  ${mc}: Fabric API download failed - ${e.message}")
+        }
+    }
+}
+
+def printResultTable(results, logger) {
+    logger.lifecycle("""
+╔══════════════════════════════════════════════════════════════╗
+║                 BATCH TEST RESULTS                          ║
+╠══════════════════════════════════════════════════════════════╣
+║  # │ Version              │ Result   │ Time    │ Detail     ║
+╠══════════════════════════════════════════════════════════════╣""".stripIndent())
+
+    def pass = 0; def fail = 0; def skip = 0
+    results.eachWithIndex { r, i ->
+        def icon = r[1] == "PASS" ? "✓" : (r[1] == "FAIL" ? "✗" : "○")
+        logger.lifecycle("║ ${String.format("%2d", i+1)} │ ${String.format("%-20s", r[0])} │ ${icon} ${String.format("%-6s", r[1])} │ ${String.format("%5.1f", (r[2] ?: 0) as double)}s │ ${r[3].take(30)}")
+        if (r[1] == "PASS") pass++ else if (r[1] == "FAIL") fail++ else skip++
+    }
+    logger.lifecycle("""╠══════════════════════════════════════════════════════════════╣
+║  Total: ${pass} passed, ${fail} failed, ${skip} skipped                              ║
+╚══════════════════════════════════════════════════════════════╝""".stripIndent())
+}

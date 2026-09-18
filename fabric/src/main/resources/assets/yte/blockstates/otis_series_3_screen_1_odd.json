@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/otis_series_3_lantern_1_arrow_up_odd"
+    },
+    "facing=east": {
+      "model": "yte:block/otis_series_3_lantern_1_arrow_up_odd",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/otis_series_3_lantern_1_arrow_up_odd",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/otis_series_3_lantern_1_arrow_up_odd",
+      "y": 270
+    }
+  }
+}

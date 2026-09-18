@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/shanghai_mitsubishi_lehy_3_screen_1_wide_odd"
+    },
+    "facing=east": {
+      "model": "yte:block/shanghai_mitsubishi_lehy_3_screen_1_wide_odd",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/shanghai_mitsubishi_lehy_3_screen_1_wide_odd",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/shanghai_mitsubishi_lehy_3_screen_1_wide_odd",
+      "y": 270
+    }
+  }
+}

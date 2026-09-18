@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "yte:block/schindler_s_series_grey_button"
+    },
+    "facing=east": {
+      "model": "yte:block/schindler_s_series_grey_button",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "yte:block/schindler_s_series_grey_button",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "yte:block/schindler_s_series_grey_button",
+      "y": 270
+    }
+  }
+}
