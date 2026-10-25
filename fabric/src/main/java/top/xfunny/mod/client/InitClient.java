@@ -1,8 +1,10 @@
 package top.xfunny.mod.client;
 
 
+import org.mtr.mapping.holder.CompoundTag;
 import org.mtr.mapping.holder.Identifier;
 import org.mtr.mapping.holder.RenderLayer;
+import org.mtr.mapping.mapper.ItemStackNbtHelper;
 import org.mtr.mapping.registry.RegistryClient;
 import org.mtr.mod.client.MinecraftClientData;
 import top.xfunny.mod.BlockEntityTypes;
@@ -430,9 +432,10 @@ public final class InitClient {
 
     private static RegistryClient.ModelPredicateProvider checkItemPredicateTag() {
         return (itemStack, clientWorld, livingEntity) -> {
-            if (itemStack.getOrCreateTag().contains(YTEItemBlockClickingBase.TAG_SECOND_POS)) {
+            final CompoundTag tag = ItemStackNbtHelper.getTag(itemStack);
+            if (tag.contains(YTEItemBlockClickingBase.TAG_SECOND_POS)) {
                 return 1F;
-            } else if (itemStack.getOrCreateTag().contains(YTEItemBlockClickingBase.TAG_POS)) {
+            } else if (tag.contains(YTEItemBlockClickingBase.TAG_POS)) {
                 return 0.5F;
             } else {
                 return 0;

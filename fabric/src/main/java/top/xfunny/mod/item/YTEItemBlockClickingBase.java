@@ -2,6 +2,7 @@ package top.xfunny.mod.item;
 
 import org.mtr.mapping.holder.*;
 import org.mtr.mapping.mapper.ItemExtension;
+import org.mtr.mapping.mapper.ItemStackNbtHelper;
 import org.mtr.mod.generated.lang.TranslationProvider;
 import top.xfunny.mod.block.base.LiftButtonsBase;
 
@@ -10,85 +11,102 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public abstract class YTEItemBlockClickingBase extends ItemExtension {
-    public static final String TAG_POS = "pos";
-    public static final String TAG_SECOND_POS = "secondPos";
+	public static final String TAG_POS = "pos";
+	public static final String TAG_SECOND_POS = "secondPos";
 
-    public YTEItemBlockClickingBase(ItemSettings itemSettings) {
-        super(itemSettings);
-    }
+	public YTEItemBlockClickingBase(ItemSettings itemSettings) {
+		super(itemSettings);
+	}
 
-    @Nonnull
-    @Override
-    public ActionResult useOnBlock2(ItemUsageContext context) {
-        if (!context.getWorld().isClient()) {
-            if (clickCondition(context)) {
-                final CompoundTag compoundTag = context.getStack().getOrCreateTag();
+	@Nonnull
+	@Override
+	public ActionResult useOnBlock2(ItemUsageContext context) {
+		final ItemStack stack = context.getStack();
+		final CompoundTag compoundTag = ItemStackNbtHelper.getOrCreateTag(stack);
+		final boolean isClient = context.getWorld().isClient();
 
-                if (compoundTag.contains(TAG_SECOND_POS)) {
-                    final BlockPos posEnd = BlockPos.fromLong(compoundTag.getLong(TAG_POS));
-                    final BlockPos posStart = BlockPos.fromLong(compoundTag.getLong(TAG_SECOND_POS));
-                    final BlockPos posThird = context.getBlockPos();
+		if (compoundTag.contains(TAG_SECOND_POS)) {
+			if (clickCondition(context)) {
+				final BlockPos posEnd = BlockPos.fromLong(compoundTag.getLong(TAG_POS));
+				final BlockPos posStart = BlockPos.fromLong(compoundTag.getLong(TAG_SECOND_POS));
+				final BlockPos posThird = context.getBlockPos();
+				if (!isClient) {
+					onThirdClick(context, posStart, posEnd, posThird, compoundTag);
+				}
+				clearSelection(stack, compoundTag);
+				return ActionResult.SUCCESS;
+			}
+			clearSelection(stack, compoundTag);
+			return ActionResult.FAIL;
+		}
 
-                    try {
-                        onThirdClick(context, posStart, posEnd, posThird, compoundTag);
-                    } finally {
-                        compoundTag.remove(TAG_SECOND_POS);
-                        compoundTag.remove(TAG_POS);
-                    }
+		if (compoundTag.contains(TAG_POS)) {
+			if (!clickCondition(context)) {
+				clearSelection(stack, compoundTag);
+				return ActionResult.FAIL;
+			}
 
-                } else if (compoundTag.contains(TAG_POS)) {
-                    final BlockPos posEnd = BlockPos.fromLong(compoundTag.getLong(TAG_POS));
-                    final BlockPos posStart = context.getBlockPos();
-                    World world = context.getWorld();
+			final BlockPos posEnd = BlockPos.fromLong(compoundTag.getLong(TAG_POS));
+			final BlockPos posStart = context.getBlockPos();
+			final World world = context.getWorld();
 
-                    final Block blockEnd = world.getBlockState(posEnd).getBlock();
-                    final Block blockStart = world.getBlockState(posStart).getBlock();
+			final Block blockEnd = world.getBlockState(posEnd).getBlock();
+			final Block blockStart = world.getBlockState(posStart).getBlock();
 
-                    boolean triggerThirdClick = false;
+			boolean triggerThirdClick = false;
+			if (blockEnd.data instanceof LiftButtonsBase && blockStart.data instanceof LiftButtonsBase) {
+				final boolean endAllowPress = ((LiftButtonsBase) blockEnd.data).allowPress;
+				final boolean startAllowPress = ((LiftButtonsBase) blockStart.data).allowPress;
+				if (endAllowPress != startAllowPress) {
+					triggerThirdClick = true;
+				}
+			}
 
-                    // [修复] 只有当两个点都是 LiftButtonsBase，且 allowPress 相反时，才触发三点模式
-                    if (blockEnd.data instanceof LiftButtonsBase && blockStart.data instanceof LiftButtonsBase) {
-                        boolean endAllowPress = ((LiftButtonsBase) blockEnd.data).allowPress;
-                        boolean startAllowPress = ((LiftButtonsBase) blockStart.data).allowPress;
+			if (triggerThirdClick) {
+				compoundTag.putLong(TAG_SECOND_POS, posStart.asLong());
+				ItemStackNbtHelper.saveTag(stack, compoundTag);
+				return ActionResult.SUCCESS;
+			}
 
-                        if (endAllowPress != startAllowPress) {
-                            triggerThirdClick = true;
-                        }
-                    }
+			if (!isClient) {
+				onEndClick(context, posEnd, compoundTag);
+			}
+			clearSelection(stack, compoundTag);
+			return ActionResult.SUCCESS;
+		}
 
-                    if (triggerThirdClick) {
-                        compoundTag.putLong(TAG_SECOND_POS, posStart.asLong());
-                    } else {
-                        try {
-                            onEndClick(context, posEnd, compoundTag);
-                        } finally {
-                            compoundTag.remove(TAG_POS);
-                        }
-                    }
-                } else {
-                    compoundTag.putLong(TAG_POS, context.getBlockPos().asLong());
-                    onStartClick(context, compoundTag);
-                }
-                return ActionResult.SUCCESS;
-            } else {
-                return ActionResult.FAIL;
-            }
-        } else {
-            return super.useOnBlock2(context);
-        }
-    }
+		if (clickCondition(context)) {
+			if (!isClient) {
+				onStartClick(context, compoundTag);
+			}
+			compoundTag.putLong(TAG_POS, context.getBlockPos().asLong());
+			ItemStackNbtHelper.saveTag(stack, compoundTag);
+			return ActionResult.SUCCESS;
+		}
 
-    @Override
-    public void addTooltips(ItemStack stack, @Nullable World world, List<MutableText> tooltip, TooltipContext options) {
-        final CompoundTag compoundTag = stack.getOrCreateTag();
-        if (compoundTag.contains(TAG_POS)) {
-            final long posLong = compoundTag.getLong(TAG_POS);
-            tooltip.add(TranslationProvider.TOOLTIP_MTR_SELECTED_BLOCK.getMutableText(BlockPos.fromLong(posLong).toShortString()).formatted(TextFormatting.GOLD));
-        }
-    }
+		return isClient ? super.useOnBlock2(context) : ActionResult.FAIL;
+	}
 
-    protected abstract void onStartClick(ItemUsageContext context, CompoundTag compoundTag);
-    protected abstract void onEndClick(ItemUsageContext context, BlockPos posEnd, CompoundTag compoundTag);
-    protected abstract void onThirdClick(ItemUsageContext context, BlockPos pos1, BlockPos pos2, BlockPos pos3, CompoundTag compoundTag);
-    protected abstract boolean clickCondition(ItemUsageContext context);
+	private static void clearSelection(ItemStack stack, CompoundTag compoundTag) {
+		compoundTag.remove(TAG_SECOND_POS);
+		compoundTag.remove(TAG_POS);
+		ItemStackNbtHelper.saveTag(stack, compoundTag);
+	}
+
+	@Override
+	public void addTooltips(ItemStack stack, @Nullable World world, List<MutableText> tooltip, TooltipContext options) {
+		final CompoundTag compoundTag = ItemStackNbtHelper.getTag(stack);
+		if (compoundTag.contains(TAG_POS)) {
+			final long posLong = compoundTag.getLong(TAG_POS);
+			tooltip.add(TranslationProvider.TOOLTIP_MTR_SELECTED_BLOCK.getMutableText(BlockPos.fromLong(posLong).toShortString()).formatted(TextFormatting.GOLD));
+		}
+	}
+
+	protected abstract void onStartClick(ItemUsageContext context, CompoundTag compoundTag);
+
+	protected abstract void onEndClick(ItemUsageContext context, BlockPos posEnd, CompoundTag compoundTag);
+
+	protected abstract void onThirdClick(ItemUsageContext context, BlockPos pos1, BlockPos pos2, BlockPos pos3, CompoundTag compoundTag);
+
+	protected abstract boolean clickCondition(ItemUsageContext context);
 }

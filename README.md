@@ -1,5 +1,11 @@
 # Yunzhu Transit Extension Mod
 
+
+## Unofficial 1.21.11 Fabric builds
+
+### patch1 (`v1.0.2-1.21.11-patch1`)
+- **Item NBT / linker selection on 1.21.11**: use `ItemStackNbtHelper` instead of removed `ItemStack.getOrCreateTag()`, so lift/button linkers keep selected-state model predicates and multi-click linking works.
+
 [简体中文](./README_zh-cn.md) | **[English](./README.md)**
 
 **Yunzhu Transit Extension** is a decorative add-on for
