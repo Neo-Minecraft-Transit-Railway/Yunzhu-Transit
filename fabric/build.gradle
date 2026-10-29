@@ -59,8 +59,13 @@ tasks.register('generateItemDefinitions') {
 		def outDir = outputDir.get().asFile
 		outDir.mkdirs()
 		def jsonSlurper = new groovy.json.JsonSlurper()
+		def existingItemsDir = file('src/main/resources/assets/yte/items')
 		modelsDir.eachFile { modelFile ->
 			if (!modelFile.name.endsWith('.json')) {
+				return
+			}
+			// Prefer hand-authored 1.21 item defs when present (avoids processResources duplicate clashes).
+			if (new File(existingItemsDir, modelFile.name).exists()) {
 				return
 			}
 			def itemId = modelFile.name - '.json'

@@ -18,17 +18,16 @@ public abstract class MixinBlockLiftPanelBase {
     private void injectOnUse2(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
         if (world.isClient()) {
             cir.setReturnValue(ActionResult.SUCCESS);
+        } else if (player.isHolding(org.mtr.mod.Items.LIFT_BUTTONS_LINK_CONNECTOR.get())
+                || player.isHolding(org.mtr.mod.Items.LIFT_BUTTONS_LINK_REMOVER.get())
+                || player.isHolding(Items.YTE_LIFT_BUTTONS_LINK_CONNECTOR.get())
+                || player.isHolding(Items.YTE_LIFT_BUTTONS_LINK_REMOVER.get())
+                || player.isHolding(Items.YTE_GROUP_LIFT_BUTTONS_LINK_CONNECTOR.get())
+                || player.isHolding(Items.YTE_GROUP_LIFT_BUTTONS_LINK_REMOVER.get())) {
+            // FAIL → MTR BlockExtension.useItemOn remaps to PASS so the linker item runs on 1.21.
+            cir.setReturnValue(ActionResult.FAIL);
         } else {
-            if (player.isHolding(org.mtr.mod.Items.LIFT_BUTTONS_LINK_CONNECTOR.get())
-                    || player.isHolding(org.mtr.mod.Items.LIFT_BUTTONS_LINK_REMOVER.get())
-                    || player.isHolding(Items.YTE_LIFT_BUTTONS_LINK_CONNECTOR.get())
-                    || player.isHolding(Items.YTE_LIFT_BUTTONS_LINK_REMOVER.get())
-                    || player.isHolding(Items.YTE_GROUP_LIFT_BUTTONS_LINK_CONNECTOR.get())
-                    || player.isHolding(Items.YTE_GROUP_LIFT_BUTTONS_LINK_REMOVER.get())) {
-                cir.setReturnValue(ActionResult.PASS);
-            } else {
-                cir.setReturnValue(ActionResult.FAIL);
-            }
+            cir.setReturnValue(ActionResult.FAIL);
         }
     }
 }
